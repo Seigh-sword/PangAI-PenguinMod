@@ -1,7 +1,4 @@
-/**
- * syntax.js - The AI Juice Compiler
- * Directly connects shorthand commands to the AILoader.
- */
+
 import { AILoader } from './AILoader.js';
 
 export class PangCompiler {
@@ -9,12 +6,8 @@ export class PangCompiler {
         this.engine = new AILoader();
     }
 
-    /**
-     * The main function to run "AI Juice" code
-     * Example: txt.prompt("Hello")send;
-     */
     async run(code) {
-        // 1. Handle Attachments (url="...")
+
         const attachMatch = code.match(/attachURL\(url="([^"]+)"\)/);
         if (attachMatch) {
             this.engine.addAttachment(attachMatch[1]);
@@ -30,7 +23,7 @@ export class PangCompiler {
             }
         }
 
-        // 3. Handle Images: img.prompt("...")
+
         if (code.includes('img.prompt')) {
             const imgMatch = code.match(/img\.prompt\("([^"]+)"\)/);
             if (imgMatch) {
@@ -41,9 +34,6 @@ export class PangCompiler {
         return "Syntax Error: Command not recognized.";
     }
 
-    /**
-     * Multi-line runner for complex scripts
-     */
     async executeScript(script) {
         const lines = script.split('\n');
         let finalResult = "";
