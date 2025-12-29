@@ -13,7 +13,7 @@ export class PangCompiler {
             this.engine.addAttachment(attachMatch[1]);
         }
 
-        // 2. Handle Text: txt.prompt("...")send;
+
         if (code.includes('txt.prompt') && code.includes('send;')) {
             const promptMatch = code.match(/txt\.prompt\("([^"]+)"\)/);
             if (promptMatch) {
