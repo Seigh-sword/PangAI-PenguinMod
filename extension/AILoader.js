@@ -1,60 +1,62 @@
 /**
- * AILoader.js - The Core Engine for Pang AI
- * Handles Pollinations.ai API and state management.
+ * AILoader.js - The Professional Core for Pang AI
  */
-
 export class AILoader {
     constructor() {
-        // Internal state for AI settings
-        this.config = {
-            textBase: "https://text.pollinations.ai/",
-            imageBase: "https://image.pollinations.ai/prompt/",
-            defaultModel: "openai",
-            defaultSeed: 42,
-            defaultTemp: 1
+        this.bots = {
+            'default': { system: "You are a helpful assistant.", model: 'openai', temp: 1, seed: 42 }
         };
-        
-        // Attachment buffer
-        this.currentAttachments = [];
+        this.activeBot = 'default';
+        this.attachments = [];
+        this.onlineStatus = true;
     }
 
-    /**
-     * The core Text Request function (The "send" in your syntax)
-     */
-    async fetchText(prompt, system = "You are a helpful AI.", customSettings = {}) {
-        const seed = customSettings.seed || this.config.defaultSeed;
-        const model = customSettings.model || this.config.defaultModel;
-        
-        // Build the URL with the "AI Juice" logic
-        let url = `${this.config.textBase}${encodeURIComponent(prompt)}?model=${model}&seed=${seed}&system=${encodeURIComponent(system)}`;
-        
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error("API Offline");
-            return await response.text();
-        } catch (error) {
-            console.error("PangAI Loader Error:", error);
-            return "Error: Could not reach the AI brain.";
+    createBot(name) {
+        if (!this.bots[name]) {
+            this.bots[name] = { 
+                system: "You are a helpful assistant.", 
+                model: 'openai', 
+                temp: 1, 
+                seed: Math.floor(Math.random() * 99999) 
+            };
         }
     }
 
-    /**
-     * The core Image Request function (The "img.prompt" in your syntax)
-     */
-    fetchImageURL(prompt, seed = Math.floor(Math.random() * 99999)) {
-        // We use the turbo model here for stability as we discussed
-        return `${this.config.imageBase}${encodeURIComponent(prompt)}?seed=${seed}&nologo=true&model=turbo`;
+    switchBot(name) {
+        if (this.bots[name]) this.activeBot = name;
     }
 
-    /**
-     * Logic for Context/Attachments
-     */
-    addAttachment(url) {
-        this.currentAttachments.push(url);
-        console.log("PangAI: Attachment added:", url);
+    // This handles the "ask active bot" and "txt.prompt" logic
+    async fetchText(prompt, systemOverride = null) {
+        const bot = this.bots[this.activeBot];
+        const system = systemOverride || bot.system;
+        
+        let finalPrompt = prompt;
+        if (this.attachments.length > 0) {
+            finalPrompt = `Context Attachments: ${this.attachments.join(", ")}\n\nQuery: ${prompt}`;
+        }
+
+        const url = `https://text.pollinations.ai/${encodeURIComponent(finalPrompt)}?model=${bot.model}&system=${encodeURIComponent(system)}&seed=${bot.seed}&temperature=${bot.temp}`;
+        
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error();
+            this.onlineStatus = true;
+            return await response.text();
+        } catch (e) {
+            this.onlineStatus = false;
+            return "Connection Error: Check your internet or the Pollinations API status.";
+        }
     }
 
-    clearAttachments() {
-        this.currentAttachments = [];
+    // Handles the "get image URL" logic
+    fetchImage(prompt) {
+        const seed = Math.floor(Math.random() * 99999);
+        // Using turbo for speed and nologo=true for a clean look
+        return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?seed=${seed}&nologo=true&model=turbo`;
+    }
+
+    isReady() {
+        return this.onlineStatus;
     }
 }
